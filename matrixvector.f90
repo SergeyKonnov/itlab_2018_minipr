@@ -64,16 +64,16 @@ enddo
 sync all
 if(this_image() == 1) then
     k = 2
-    j = 1
+    j = 0
     do i=portion+1,m
-        ans(i)[1] = ans(j)[k]
-        if (j == portion[k]) then
+        do while(k < num_images() .and. j == portion[k])
             k = k + 1
-            j = 1
-        else
-            j = j + 1
-        endif
+            j = 0
+        enddo
+        j = j + 1
+        print *, i, j, k
+        ans(i)[1] = ans(j)[k]
     enddo
-    write(2, *) (ans(i), i=1,m)
+    write(*, *) (ans(i), i=1,m)
 endif
 end program matrixvector
