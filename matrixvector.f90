@@ -39,7 +39,7 @@ if(this_image()==1) then
         enddo
         tmp = tmp + portion
     enddo
-    if(num_images() .NE. 1) then
+    if(num_images() /= 1) then
         portion[num_images()] = m-tmp
         do j = tmp+1, m
             do k=1,n
@@ -71,7 +71,6 @@ if(this_image() == 1) then
             j = 0
         enddo
         j = j + 1
-        print *, i, j, k
         ans(i)[1] = ans(j)[k]
     enddo
     write(*, *) (ans(i), i=1,m)
