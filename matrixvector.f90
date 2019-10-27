@@ -2,8 +2,8 @@ program matrixvector
 implicit none
 
 integer :: ierror, n[*], m[*], portion[*], i, j, k, tmp, tmp2
-integer, dimension(50,50), codimension[*]::a
-integer, dimension(50), codimension[*]::b, ans[*]
+integer, dimension(2500,2500), codimension[*]::a
+integer, dimension(2500), codimension[*]::b, ans[*]
 logical :: init
 
 call MPI_Initialized(init, ierror)

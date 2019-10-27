@@ -1,6 +1,6 @@
 program smatrixvector
 implicit none
-integer n,  m, i, j, k
+integer n,  m, i, j
 integer, dimension(50,50)::a
 integer, dimension(50)::b, ans
 
