@@ -1,90 +1,99 @@
 program matrixvector
 implicit none
 
-integer :: ierror, n[*], m[*], portion[*], i, j, k, tmp, tmp2
-integer, dimension(:), codimension[:], allocatable::a
-integer, dimension(:), codimension[:], allocatable::b, ans
+integer :: n[*], m[*], portion[*], i, j, k, tmp, tmp2, begin
+integer, dimension(:), codimension[:], allocatable ::a, b, ans
+!integer, dimension(25000), codimension[*] :: a, b, ans
+integer, dimension(:), allocatable :: tmparr
 logical :: init
-
-call MPI_Initialized(init, ierror)
-if(.not. init) then
-    call MPI_Init(ierror)
-endif
 
 if (this_image()==1) then
     open(1, action='read', file='input.txt')
     open(2, action='write', status='replace', file='output.txt')
     read(1, *) n, m
-    do i = 2, num_images()
-        n[i] = n
-        m[i] = m
-    enddo
-endif
-allocate(a(n*m)[*])
-allocate(b(n)[*])
-allocate(ans(n)[*])
-if(this_image() == 1) then
-    do i=1, n
-        read(1, *) (a((i-1)*m+j), j=1,m)
-    enddo
-    read(1, *) (b(i), i=1,n)
 endif
 
 sync all
 
-if(this_image()==1) then
+n = n[1]
+m = m[1]
+
+if(this_image() - 1 < mod(m, num_images())) then
+    portion = m/num_images()+1
+else
     portion = m/num_images()
-    tmp = portion
-    do i = 2, num_images()-1
-        portion[i] = portion
-        do j = tmp+1, tmp+portion
-        do k = 1, n
-                a((k-1)*m+j-tmp)[i] = a((k-1)*m+j);
-                !a(k,j-tmp)[i] = a(k, j)
-            enddo
-        enddo
-        tmp = tmp + portion
-    enddo
-    if(num_images() .NE. 1) then
-        portion[num_images()] = m-tmp
-        do j = tmp+1, m
-            do k=1,n
-                a((k-1)*m + j-tmp)[num_images()] = a((k-1)*m+j);
-                !a(k,j-tmp)[num_images()] = a(k,j)
-            enddo
-        enddo
-    endif
-    do i=2,num_images()
-        do j=1, n
-            b(j)[i]= b(j)
-        enddo
-    enddo
 endif
+
+! allocate(a((100500))[*])
+! allocate(b(100500)[*])
+! allocate(ans(100500)[*])
+allocate(a(m*n)[*])
+allocate(b(n)[*])
+allocate(ans(m)[*])
+
 sync all
 
+if(this_image() == 1) then
+    do i = 1, n*m
+        a(i) = i
+    enddo
+    do i = 1, n
+        b(i) = i
+    enddo
+endif
+
+sync all
+
+begin = 0
+if(this_image() - 1 < mod(m, num_images())) then
+    begin = (this_image()-1)*portion
+else
+    begin = mod(m, num_images())*(portion+1) + (this_image()-mod(m, num_images())-1)*portion
+endif
+
+do i=0,portion-1
+    do j=1,n
+        a(i*n+j) = a((begin+i)*n+j)[1]
+    enddo
+enddo
+
+do i = 1,n
+    b(i) = b(i)[1]
+enddo
+
+! вычисление
 do i=1, portion
     ans(i) = 0
     do j=1, n
-        ans(i) = ans(i) + a((j-1)*m+i)*b(j)
-        !ans(i) = ans(i) + a(j,i)*b(j)
+        ans(i) = ans(i) + a((i-1)*n+j)*b(j)
     enddo
 enddo
+
 sync all
+! сбор данных
 if(this_image() == 1) then
-    k = 2
-    j = 1
-    do i=portion+1,m
-        ans(i)[1] = ans(j)[k]
-        if (j == portion[k]) then
-            k = k + 1
-            j = 1
+    tmp = 2
+    k = 0
+    do i = portion+1,m
+        k = k + 1
+        ans(i) = ans(k)[tmp]
+        if(tmp - 1 < mod(m, num_images())) then
+            if(k == m/num_images()+1) then
+                tmp = tmp + 1
+                k = 0
+            endif
         else
-            j = j + 1
+            if(k == m/num_images()) then
+                tmp = tmp + 1
+                k = 0
+            endif
         endif
     enddo
-    write(2, *) (ans(i), i=1,m)
+    write(*, *) (ans(i), i=1,m)
 endif
+
 deallocate(a)
 deallocate(b)
 deallocate(ans)
+print *, this_image(), " end program"
 end program matrixvector
