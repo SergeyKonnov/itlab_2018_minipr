@@ -1,16 +1,26 @@
 program matrixvector
 implicit none
 
+include 'mpif.h'
+
+integer::ierror
 integer :: n[*], m[*], portion[*], i, j, k, tmp, tmp2, begin
 integer, dimension(:), codimension[:], allocatable ::a, b, ans
 !integer, dimension(25000), codimension[*] :: a, b, ans
 integer, dimension(:), allocatable :: tmparr
-logical :: init
+logical::init
+character(100)::num1char, num2char
+real::t1, t2
+call MPI_Initialized(init, ierror)
+if(.not. init) then
+    call MPI_Init(ierror)
+endif
 
 if (this_image()==1) then
-    open(1, action='read', file='input.txt')
-    open(2, action='write', status='replace', file='output.txt')
-    read(1, *) n, m
+    call get_command_argument(1, num1char)
+    call get_command_argument(2, num2char)
+    read(num1char, '(I10)') n
+    read(num2char, '(I10)') m
 endif
 
 sync all
@@ -43,7 +53,7 @@ if(this_image() == 1) then
 endif
 
 sync all
-
+t1 = MPI_Wtime()
 begin = 0
 if(this_image() - 1 < mod(m, num_images())) then
     begin = (this_image()-1)*portion
@@ -60,6 +70,7 @@ enddo
 do i = 1,n
     b(i) = b(i)[1]
 enddo
+
 
 ! вычисление
 do i=1, portion
@@ -89,11 +100,13 @@ if(this_image() == 1) then
             endif
         endif
     enddo
-    write(*, *) (ans(i), i=1,m)
+    ! write(*, *) (ans(i), i=1,m)
 endif
-
+t2 = MPI_Wtime() 
+write(*, *) t2-t1
 deallocate(a)
 deallocate(b)
 deallocate(ans)
 print *, this_image(), " end program"
+! call MPI_Finalize(ierror)
 end program matrixvector
