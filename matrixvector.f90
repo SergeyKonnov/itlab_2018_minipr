@@ -103,10 +103,12 @@ if(this_image() == 1) then
     ! write(*, *) (ans(i), i=1,m)
 endif
 t2 = MPI_Wtime() 
-write(*, *) t2-t1
+if(this_image() == 1) then
+    write(*, *) t2-t1
+endif
 deallocate(a)
 deallocate(b)
 deallocate(ans)
-print *, this_image(), " end program"
+! print *, this_image(), " end program"
 ! call MPI_Finalize(ierror)
 end program matrixvector
