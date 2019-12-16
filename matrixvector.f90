@@ -10,7 +10,7 @@ integer, dimension(:), codimension[:], allocatable ::a, b, ans
 integer, dimension(:), allocatable :: tmparr
 logical::init
 character(100)::num1char, num2char
-real::t1, t2
+real::t1, t2, t3, t4;
 call MPI_Initialized(init, ierror)
 if(.not. init) then
     call MPI_Init(ierror)
@@ -23,8 +23,8 @@ if (this_image()==1) then
     read(num2char, '(I10)') m
 endif
 
+t3 = MPI_Wtime()
 sync all
-
 n = n[1]
 m = m[1]
 
@@ -40,8 +40,8 @@ endif
 allocate(a(m*n)[*])
 allocate(b(n)[*])
 allocate(ans(m)[*])
-
 sync all
+t4 = MPI_Wtime()
 
 if(this_image() == 1) then
     do i = 1, n*m
@@ -52,8 +52,8 @@ if(this_image() == 1) then
     enddo
 endif
 
-sync all
 t1 = MPI_Wtime()
+sync all
 begin = 0
 if(this_image() - 1 < mod(m, num_images())) then
     begin = (this_image()-1)*portion
@@ -104,7 +104,7 @@ if(this_image() == 1) then
 endif
 t2 = MPI_Wtime() 
 if(this_image() == 1) then
-    write(*, *) t2-t1
+    write(*, *) t4-t3+t2-t1
 endif
 deallocate(a)
 deallocate(b)
